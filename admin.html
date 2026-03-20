@@ -83,9 +83,29 @@
     <script src="js/admin.js"></script>
     <script>
         Auth.requireAdmin();
-        function showSection(id) {
-            UI.showToast("Switching to " + id);
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.main-content > div[id^="section-"]').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show selected section
+            const targetSection = document.getElementById('section-' + sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('onclick')?.includes(`'${sectionId}'`)) {
+                    item.classList.add('active');
+                }
+            });
         }
+
+        // Initialize view
+        showSection('users');
     </script>
 </body>
 </html>

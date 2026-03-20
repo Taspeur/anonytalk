@@ -104,6 +104,17 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Type de discussion</label>
+                    <div class="flex-center" style="gap: 15px; margin-top: 5px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="post-type" value="public" checked> Publique
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="radio" name="post-type" value="counselor"> Avec un conseiller
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Votre message</label>
                     <textarea id="post-content" class="form-input" rows="5" placeholder="Exprimez-vous librement et anonymement..." required></textarea>
                 </div>

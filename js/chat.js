@@ -14,9 +14,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const posts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || "[]");
         const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
         
-        const filteredPosts = category === 'tous' 
-            ? posts 
-            : posts.filter(p => p.category === category);
+        const currentUser = Auth.getCurrentUser();
+        
+        let filteredPosts = posts;
+
+        // Apply category filter
+        if (category !== 'tous') {
+            filteredPosts = filteredPosts.filter(p => p.category === category);
+        }
+
+        // Apply visibility filter: Counselor posts are private
+        filteredPosts = filteredPosts.filter(p => {
+            if (p.type === 'counselor') {
+                return currentUser && (currentUser.id === p.authorId || currentUser.role === 'counselor' || currentUser.role === 'admin');
+            }
+            return true; // Public posts are visible to all
+        });
 
         if (filteredPosts.length === 0) {
             postsContainer.innerHTML = `
@@ -36,12 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const author = users.find(u => u.id === post.authorId) || { initials: '??', username: 'Anonyme' };
             const date = new Date(post.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
             
+            const typeBadge = post.type === 'counselor' ? '<span class="badge badge-red" style="margin-left: 10px;">🔒 Privé (Conseil)</span>' : '';
+            
             return `
                 <a href="chat.html?id=${post.id}" class="post-card animate-fade">
                     <div class="post-header">
                         <div class="avatar avatar-sm">${author.initials}</div>
                         <div>
-                            <div style="font-size: 0.9rem; font-weight: 600;">${author.username}</div>
+                            <div style="font-size: 0.9rem; font-weight: 600;">${author.username}${typeBadge}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">${date} • <span class="badge badge-gray" style="text-transform: capitalize; padding: 1px 6px;">${post.category}</span></div>
                         </div>
                     </div>
@@ -71,11 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = Auth.getCurrentUser();
             const posts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || "[]");
             
+            const postType = document.querySelector('input[name="post-type"]:checked').value;
+            
             const newPost = {
                 id: 'post-' + Date.now(),
                 authorId: user.id,
                 title: document.getElementById('post-title').value,
                 category: document.getElementById('post-category').value,
+                type: postType,
                 content: document.getElementById('post-content').value,
                 createdAt: new Date().toISOString()
             };
