@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Conseiller — AnonyTalk</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/chat.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon">A</div>
+                <span>AnonyTalk Conseil</span>
+            </a>
+            <div class="nav-actions">
+                <!-- Populated by app.js -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-layout">
+        <aside class="sidebar">
+            <div class="sidebar-title">Mon Espace</div>
+            <div class="sidebar-nav-item active">
+                <span class="icon">💬</span> Discussions en cours
+            </div>
+            <div class="sidebar-nav-item">
+                <span class="icon">📁</span> Archives
+            </div>
+            <div class="sidebar-nav-item">
+                <span class="icon">📋</span> Ressources Aide
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 32px;">
+                <div class="badge badge-green">Compte Certifié</div>
+                <h1 style="margin-top: 10px;">Tableau de bord Conseiller</h1>
+                <p>Répondez aux appels à l'aide et guidez nos membres.</p>
+            </header>
+
+            <div id="counselor-dashboard-content">
+                <div class="grid-2">
+                    <!-- Urgent Cases -->
+                    <div class="card" style="border-left: 4px solid var(--danger);">
+                        <h3 style="margin-bottom: 16px;">Sujets récents sans réponse</h3>
+                        <div id="urgent-posts-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Active Dialogues -->
+                    <div class="card" style="border-left: 4px solid var(--accent);">
+                        <h3 style="margin-bottom: 16px;">Vos interventions actives</h3>
+                        <div id="active-interventions-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/counselor.js"></script>
+    <script>
+        // Check if counselor
+        const user = Auth.getCurrentUser();
+        if (!user || (user.role !== 'counselor' && user.role !== 'admin')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

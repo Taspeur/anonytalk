@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord — AnonyTalk</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/chat.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon">A</div>
+                <span>AnonyTalk</span>
+            </a>
+            <ul class="nav-links">
+                <!-- Will be populated by app.js -->
+            </ul>
+            <div class="nav-actions">
+                <!-- Will be populated by app.js -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-title">Catégories</div>
+            <div class="sidebar-nav-item active" data-category="tous">
+                <span class="icon">🌍</span> Tout voir
+            </div>
+            <div class="sidebar-nav-item" data-category="anxiete">
+                <span class="icon">😰</span> Anxiété
+            </div>
+            <div class="sidebar-nav-item" data-category="depression">
+                <span class="icon">😔</span> Dépression
+            </div>
+            <div class="sidebar-nav-item" data-category="famille">
+                <span class="icon">🏠</span> Famille
+            </div>
+            <div class="sidebar-nav-item" data-category="travail">
+                <span class="icon">💼</span> Travail
+            </div>
+            <div class="sidebar-nav-item" data-category="espoir">
+                <span class="icon">✨</span> Espoir & Victoires
+            </div>
+
+            <div class="divider" style="margin: 20px 0;"></div>
+            
+            <div class="sidebar-title">Conseillers en ligne</div>
+            <div id="counselor-list">
+                <!-- Populated by JS -->
+                <div class="empty-state" style="padding: 10px; opacity: 0.6;">
+                    <p style="font-size: 0.8rem;">Aucun conseiller en ligne</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="flex-between" style="margin-bottom: 32px;">
+                <div>
+                    <h2 id="welcome-msg">Bonjour, ...</h2>
+                    <p>Comment vous sentez-vous aujourd'hui ?</p>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('modal-create-post')">
+                    <span>+</span> Créer un sujet
+                </button>
+            </div>
+
+            <div id="posts-container">
+                <!-- Posts will be loaded here -->
+                <div class="empty-state">
+                    <div class="empty-icon">💭</div>
+                    <h3>Prêt à partager ?</h3>
+                    <p>Soyez le premier à lancer une discussion dans cette catégorie.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Create Post -->
+    <div id="modal-create-post" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Lancer une nouvelle discussion</h3>
+                <button class="modal-close" onclick="closeModal('modal-create-post')">&times;</button>
+            </div>
+            <form id="create-post-form">
+                <div class="form-group">
+                    <label class="form-label">Titre du sujet</label>
+                    <input type="text" id="post-title" class="form-input" placeholder="ex: Besoin de parler de mon stress au travail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Catégorie</label>
+                    <select id="post-category" class="form-input" required>
+                        <option value="anxiete">Anxiété</option>
+                        <option value="depression">Dépression</option>
+                        <option value="famille">Famille</option>
+                        <option value="travail">Travail</option>
+                        <option value="espoir">Espoir & Victoires</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Votre message</label>
+                    <textarea id="post-content" class="form-input" rows="5" placeholder="Exprimez-vous librement et anonymement..." required></textarea>
+                </div>
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary btn-full">Publier le sujet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/chat.js"></script>
+    <script>
+        // Secure page
+        Auth.requireAuth();
+        
+        // Populate welcome message
+        const user = Auth.getCurrentUser();
+        if (user) {
+            document.getElementById('welcome-msg').innerText = `Bonjour, ${user.username}`;
+        }
+
+        // Modal Logic
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    </script>
+</body>
+</html>

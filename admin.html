@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — AnonyTalk</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/admin.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon">A</div>
+                <span>AnonyTalk Admin</span>
+            </a>
+            <div class="nav-actions">
+                <!-- Populated by app.js -->
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-layout">
+        <aside class="sidebar">
+            <div class="sidebar-title">Menu Admin</div>
+            <div class="sidebar-nav-item active" onclick="showSection('users')">
+                <span class="icon">👥</span> Gestion Utilisateurs
+            </div>
+            <div class="sidebar-nav-item" onclick="showSection('stats')">
+                <span class="icon">📊</span> Statistiques
+            </div>
+            <div class="sidebar-nav-item" onclick="showSection('settings')">
+                <span class="icon">⚙️</span> Paramètres
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header style="margin-bottom: 32px;">
+                <h1>Panel d'Administration</h1>
+                <p>Gérez la communauté et nommez vos conseillers.</p>
+            </header>
+
+            <!-- Stats Section -->
+            <div id="section-stats" class="stats-grid animate-fade">
+                <div class="stat-card">
+                    <div id="stat-users" class="stat-value">0</div>
+                    <div class="stat-label">Utilisateurs inscrits</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-counselors" class="stat-value">0</div>
+                    <div class="stat-label">Conseillers actifs</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-posts" class="stat-value">0</div>
+                    <div class="stat-label">Sujets de discussion</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-messages" class="stat-value">0</div>
+                    <div class="stat-label">Messages échangés</div>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="section-users" class="admin-table-container animate-fade">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Initiales</th>
+                            <th>Pseudonyme</th>
+                            <th>Rôle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        Auth.requireAdmin();
+        function showSection(id) {
+            UI.showToast("Switching to " + id);
+        }
+    </script>
+</body>
+</html>
