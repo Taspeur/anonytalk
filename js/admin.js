@@ -2,25 +2,35 @@
  * AnonyTalk - Admin Panel Logic
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const usersTableBody = document.getElementById('users-table-body');
     
+    // Auth Check
+    await Auth.requireAdmin();
+
     // Load Stats
-    function loadStats() {
-        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
-        const posts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || "[]");
-        const messages = JSON.parse(localStorage.getItem(STORAGE_KEYS.MESSAGES) || "[]");
+    async function loadStats() {
+        const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        const { count: counselorCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'counselor');
+        const { count: postCount } = await supabase.from('posts').select('*', { count: 'exact', head: true });
+        const { count: messageCount } = await supabase.from('messages').select('*', { count: 'exact', head: true });
         
-        document.getElementById('stat-users').innerText = users.length;
-        document.getElementById('stat-counselors').innerText = users.filter(u => u.role === 'counselor').length;
-        document.getElementById('stat-posts').innerText = posts.length;
-        document.getElementById('stat-messages').innerText = messages.length;
+        document.getElementById('stat-users').innerText = userCount || 0;
+        document.getElementById('stat-counselors').innerText = counselorCount || 0;
+        document.getElementById('stat-posts').innerText = postCount || 0;
+        document.getElementById('stat-messages').innerText = messageCount || 0;
     }
 
     // Load Users Table
-    function loadUsers() {
-        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
-        const currentUser = Auth.getCurrentUser();
+    async function loadUsers() {
+        const { data: users, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('username');
+
+        if (error) return;
+
+        const currentUser = await Auth.getCurrentUser();
 
         usersTableBody.innerHTML = users.map(user => {
             const isSelf = currentUser && currentUser.id === user.id;
@@ -34,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>
                         ${isSelf ? '---' : `
                             <button class="btn btn-sm ${user.role === 'counselor' ? 'btn-secondary' : 'btn-outline'}" 
-                                onclick="toggleCounselor('${user.id}')">
+                                onclick="toggleCounselor('${user.id}', '${user.role}')">
                                 ${user.role === 'counselor' ? 'Révoquer' : 'Nommer Conseiller'}
                             </button>
                         `}
@@ -45,24 +55,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Global toggle function
-    window.toggleCounselor = function(userId) {
-        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
-        const userIndex = users.findIndex(u => u.id === userId);
+    window.toggleCounselor = async function(userId, currentRole) {
+        const newRole = currentRole === 'counselor' ? 'user' : 'counselor';
         
-        if (userIndex !== -1) {
-            const user = users[userIndex];
-            user.role = user.role === 'counselor' ? 'user' : 'counselor';
-            users[userIndex] = user;
-            
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-            UI.showToast(`Rôle de ${user.username} mis à jour.`, "success");
-            loadUsers();
-            loadStats();
+        const { error } = await supabase
+            .from('profiles')
+            .update({ role: newRole })
+            .eq('id', userId);
+        
+        if (error) {
+            UI.showToast(error.message, "error");
+            return;
         }
+            
+        UI.showToast("Rôle mis à jour avec succès.", "success");
+        await loadUsers();
+        await loadStats();
     };
 
     if (usersTableBody) {
-        loadUsers();
-        loadStats();
+        await loadUsers();
+        await loadStats();
     }
 });

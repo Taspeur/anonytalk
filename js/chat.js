@@ -10,28 +10,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCategory = 'tous';
 
     // --- Post Management ---
-    function loadPosts(category = 'tous') {
-        const posts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || "[]");
-        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
+    async function loadPosts(category = 'tous') {
+        const currentUser = await Auth.getCurrentUser();
         
-        const currentUser = Auth.getCurrentUser();
-        
-        let filteredPosts = posts;
+        // Fetch posts with author profiles
+        let query = supabase
+            .from('posts')
+            .select(`
+                *,
+                profiles (
+                    username,
+                    initials
+                )
+            `)
+            .order('created_at', { ascending: false });
 
-        // Apply category filter
         if (category !== 'tous') {
-            filteredPosts = filteredPosts.filter(p => p.category === category);
+            query = query.eq('category', category);
         }
 
-        // Apply visibility filter: Counselor posts are private
-        filteredPosts = filteredPosts.filter(p => {
-            if (p.type === 'counselor') {
-                return currentUser && (currentUser.id === p.authorId || currentUser.role === 'counselor' || currentUser.role === 'admin');
-            }
-            return true; // Public posts are visible to all
-        });
+        const { data: posts, error } = await query;
 
-        if (filteredPosts.length === 0) {
+        if (error || !posts || posts.length === 0) {
             postsContainer.innerHTML = `
                 <div class="empty-state animate-fade">
                     <div class="empty-icon">💭</div>
@@ -42,13 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Sort by newest
-        filteredPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        // Apply visibility filter locally (counselor posts)
+        const visiblePosts = posts.filter(p => {
+            if (p.type === 'counselor') {
+                return currentUser && (currentUser.id === p.author_id || currentUser.id === p.authorId || currentUser.role === 'counselor' || currentUser.role === 'admin');
+            }
+            return true;
+        });
 
-        postsContainer.innerHTML = filteredPosts.map(post => {
-            const author = users.find(u => u.id === post.authorId) || { initials: '??', username: 'Anonyme' };
-            const date = new Date(post.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-            
+        const html = await Promise.all(visiblePosts.map(async post => {
+            const author = post.profiles || { initials: '??', username: 'Anonyme' };
+            const date = new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+            const replyCount = await getReplyCount(post.id);
             const typeBadge = post.type === 'counselor' ? '<span class="badge badge-red" style="margin-left: 10px;">🔒 Privé (Conseil)</span>' : '';
             
             return `
@@ -65,41 +70,46 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${post.content}
                     </p>
                     <div class="post-meta">
-                        <span>💬 ${getReplyCount(post.id)} réponses</span>
+                        <span>💬 ${replyCount} réponses</span>
                         <span>🤝 0 conseillers ont rejoint</span>
                     </div>
                 </a>
             `;
-        }).join('');
+        }));
+
+        postsContainer.innerHTML = html.join('');
     }
 
-    function getReplyCount(postId) {
-        const messages = JSON.parse(localStorage.getItem(STORAGE_KEYS.MESSAGES) || "[]");
-        return messages.filter(m => m.postId === postId).length;
+    async function getReplyCount(postId) {
+        const { count, error } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', postId);
+        return error ? 0 : count;
     }
 
     // --- Create Post ---
     if (createPostForm) {
-        createPostForm.addEventListener('submit', (e) => {
+        createPostForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const user = Auth.getCurrentUser();
-            const posts = JSON.parse(localStorage.getItem(STORAGE_KEYS.POSTS) || "[]");
-            
+            const user = await Auth.getCurrentUser();
             const postType = document.querySelector('input[name="post-type"]:checked').value;
             
-            const newPost = {
-                id: 'post-' + Date.now(),
-                authorId: user.id,
-                title: document.getElementById('post-title').value,
-                category: document.getElementById('post-category').value,
-                type: postType,
-                content: document.getElementById('post-content').value,
-                createdAt: new Date().toISOString()
-            };
+            const { error } = await supabase
+                .from('posts')
+                .insert({
+                    author_id: user.id,
+                    title: document.getElementById('post-title').value,
+                    category: document.getElementById('post-category').value,
+                    type: postType,
+                    content: document.getElementById('post-content').value
+                });
 
-            posts.push(newPost);
-            localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+            if (error) {
+                UI.showToast(error.message, "error");
+                return;
+            }
             
             UI.showToast("Sujet publié avec succès !", "success");
             closeModal('modal-create-post');
@@ -119,14 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Load Counselors ---
-    function loadOnlineCounselors() {
-        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || "[]");
+    async function loadOnlineCounselors() {
+        const { data: counselors, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('role', ['counselor', 'admin']);
+
         const listContainer = document.getElementById('counselor-list');
         if (!listContainer) return;
 
-        const counselors = users.filter(u => u.role === 'counselor' || u.role === 'admin');
-
-        if (counselors.length === 0) {
+        if (error || !counselors || counselors.length === 0) {
             listContainer.innerHTML = `
                 <div class="empty-state" style="padding: 10px; opacity: 0.6;">
                     <p style="font-size: 0.8rem;">Aucun conseiller disponible</p>

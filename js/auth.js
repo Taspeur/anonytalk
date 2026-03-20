@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Handle Registration ---
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const btn = registerForm.querySelector('button[type="submit"]');
@@ -18,26 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             UI.setLoading(btn, true);
 
-            // Simulate slight delay for effect
-            setTimeout(() => {
-                const result = Auth.register(username, password, initials);
-                
-                if (result.success) {
-                    UI.showToast("Compte créé avec succès ! Connectez-vous.", "success");
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1500);
-                } else {
-                    UI.showToast(result.message, "error");
-                    UI.setLoading(btn, false);
-                }
-            }, 800);
+            const result = await Auth.register(username, password, initials);
+            
+            if (result.success) {
+                UI.showToast("Compte créé avec succès ! Connectez-vous.", "success");
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            } else {
+                UI.showToast(result.message, "error");
+                UI.setLoading(btn, false);
+            }
         });
     }
 
     // --- Handle Login ---
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const btn = loginForm.querySelector('button[type="submit"]');
@@ -46,28 +43,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
             UI.setLoading(btn, true);
 
-            // Simulate slight delay for effect
-            setTimeout(() => {
-                const result = Auth.login(username, password);
+            const result = await Auth.login(username, password);
+            
+            if (result.success) {
+                UI.showToast(`Bienvenue, ${result.user.username} !`, "success");
                 
-                if (result.success) {
-                    UI.showToast(`Bienvenue, ${result.user.username} !`, "success");
-                    
-                    // Redirect based on role
-                    setTimeout(() => {
-                        if (result.user.role === 'admin') {
-                            window.location.href = 'admin.html';
-                        } else if (result.user.role === 'counselor') {
-                            window.location.href = 'counselor.html';
-                        } else {
-                            window.location.href = 'dashboard.html';
-                        }
-                    }, 1000);
-                } else {
-                    UI.showToast(result.message, "error");
-                    UI.setLoading(btn, false);
-                }
-            }, 800);
+                // Redirect based on role
+                setTimeout(() => {
+                    if (result.user.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else if (result.user.role === 'counselor') {
+                        window.location.href = 'counselor.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
+                }, 1000);
+            } else {
+                UI.showToast(result.message, "error");
+                UI.setLoading(btn, false);
+            }
         });
     }
 });
