@@ -118,9 +118,23 @@
 
                 replyInput.value = '';
                 UI.setLoading(btn, false);
-                await loadMessages();
+                // No need to call loadMessages here manually if we have real-time
                 UI.showToast("Réponse envoyée", "success");
             });
+
+            // --- Real-time Subscription ---
+            supabase
+                .channel(`post-${postId}`)
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'messages',
+                    filter: `post_id=eq.${postId}`
+                }, (payload) => {
+                    console.log('New message received!', payload);
+                    loadMessages();
+                })
+                .subscribe();
         });
 
         // --- Load Post Details ---
@@ -160,8 +174,8 @@
             document.getElementById('post-author-name').innerText = author.username;
             document.getElementById('post-date').innerText = new Date(post.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
             document.getElementById('post-category-tag').innerText = post.category;
-            document.getElementById('post-title-detail').innerText = post.title;
-            document.getElementById('post-content-detail').innerText = post.content;
+            document.getElementById('post-title').innerText = post.title;
+            document.getElementById('post-content').innerText = post.content;
             
             await loadMessages();
         }
